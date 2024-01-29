@@ -14,8 +14,9 @@ type = _{ Int32 | Int64 | object }
 parameter = { ident ~ ":" ~ type }
 parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 
+module_statement = { "module" ~ WHITESPACE* ~ ident }
 call_expression = { ident ~ "(" ~ (literal ~ ("," ~ literal)*)? ~ ")" }
-statement = _{ (call_expression) ~ ";" }
+statement = _{ (module_statement | call_expression) ~ ";" }
 
 block = {
   "{" ~ "}" |
@@ -25,6 +26,6 @@ function_declaration = { "fn" ~ ident ~ parameters ~ ("->" ~ type)? ~ block }
 
 source = {
   SOI ~
-  function_declaration* ~
+  (statement | function_declaration)* ~
   EOI
 }
