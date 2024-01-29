@@ -6,7 +6,7 @@ use pest_derive::Parser;
 struct LeaParser;
 
 fn main() {
-    let a = "fn main() { print('Hello, World!'); }";
+    let a = "fn add(a: i32, b: i32) -> i32 {} fn main() { print('Hello, World!'); print(); }";
 
     match LeaParser::parse(Rule::source, a) {
         Err(e) => println!("{e}"),

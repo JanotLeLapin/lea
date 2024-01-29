@@ -12,17 +12,14 @@ object = { (ASCII_ALPHANUMERIC)+ }
 type = _{ Int32 | Int64 | object }
 
 parameter = { ident ~ ":" ~ type }
-parameters = _{
-  "(" ~ ")" |
-  "(" ~ parameter ~ ("," ~ parameter)* ~ ")"
-}
+parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 
-call_expression = { ident ~ "(" ~ literal ~ ("," ~ literal)* ~ ")" }
+call_expression = { ident ~ "(" ~ (literal ~ ("," ~ literal)*)? ~ ")" }
 statement = _{ (call_expression) ~ ";" }
 
 block = {
   "{" ~ "}" |
-  "{" ~ statement ~ ("," ~ statement)* ~ "}"
+  "{" ~ statement* ~ "}"
 }
 function_declaration = { "fn" ~ ident ~ parameters ~ ("->" ~ type)? ~ block }
 
