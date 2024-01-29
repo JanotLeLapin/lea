@@ -1,5 +1,9 @@
 WHITESPACE = _{ " " | "\t" }
 
+string_delimiter = _{ "\"" | "'" }
+string_literal = { string_delimiter ~ (!(string_delimiter) ~ ANY)* ~ string_delimiter }
+literal = _{ string_literal }
+
 ident = { (ASCII_ALPHANUMERIC | "_")+ }
 
 Int32 = { "i32" }
@@ -13,8 +17,14 @@ parameters = _{
   "(" ~ parameter ~ ("," ~ parameter)* ~ ")"
 }
 
-block = { "{" ~ "}" }
-function_declaration = { "fn" ~ ident ~ parameters ~ "->" ~ type ~ block }
+call_expression = { ident ~ "(" ~ literal ~ ("," ~ literal)* ~ ")" }
+statement = _{ (call_expression) ~ ";" }
+
+block = {
+  "{" ~ "}" |
+  "{" ~ statement ~ ("," ~ statement)* ~ "}"
+}
+function_declaration = { "fn" ~ ident ~ parameters ~ ("->" ~ type)? ~ block }
 
 source = {
   SOI ~
