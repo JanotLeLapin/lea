@@ -1,0 +1,23 @@
+WHITESPACE = _{ " " | "\t" }
+
+ident = { (ASCII_ALPHANUMERIC | "_")+ }
+
+Int32 = { "i32" }
+Int64 = { "i64" }
+object = { (ASCII_ALPHANUMERIC)+ }
+type = _{ Int32 | Int64 | object }
+
+parameter = { ident ~ ":" ~ type }
+parameters = _{
+  "(" ~ ")" |
+  "(" ~ parameter ~ ("," ~ parameter)* ~ ")"
+}
+
+block = { "{" ~ "}" }
+function_declaration = { "fn" ~ ident ~ parameters ~ "->" ~ type ~ block }
+
+source = {
+  SOI ~
+  function_declaration* ~
+  EOI
+}
