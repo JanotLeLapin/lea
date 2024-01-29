@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 pest = "2.7"
 pest_derive = "2.7"
+
+bytes = "1.5"
