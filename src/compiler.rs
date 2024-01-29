@@ -26,7 +26,7 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     let mut res = bytes::BytesMut::new();
     res.put_u32(0xCAFEBABE);
     res.put_u16(0);
-    res.put_u16(34);
+    res.put_u16(52);
 
     res.put_u16(5); // cp size
 
