@@ -28,7 +28,8 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     let mut cp = crate::compiler::constant_pool::ConstantPool::new();
     cp.insert_class(module);
     cp.insert_class("java/lang/Object");
-    cp.insert_class("java/lang/System");
+    cp.insert_string("Hello, World!");
+    cp.insert_ref(crate::compiler::constant_pool::Ref::Field, "java/lang/System", "Ljava/io/PrintStream", "out");
 
     let mut res = bytes::BytesMut::new();
     res.put_u32(0xCAFEBABE);
