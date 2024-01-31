@@ -1,5 +1,9 @@
 module Main;
 
+fn hello() -> string {
+  return "world";
+}
+
 fn main(args: string[]) {
   print("Hello, World!");
 }
