@@ -16,7 +16,7 @@ fn main() {
             println!("{parsed:#?}");
             let mut pairs = parsed.next().unwrap().into_inner();
             let class = compiler::compile(&mut pairs).unwrap();
-            std::fs::write("out.class", &class).unwrap();
+            std::fs::write("Main.class", &class).unwrap();
         }
     }
 }
