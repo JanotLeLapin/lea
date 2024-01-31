@@ -14,6 +14,14 @@ pub enum CompileError {
     ExpectedModule,
 }
 
+pub fn parse_type<'a>(t: &'a str) -> &'a str {
+    match t {
+        "String" => "Ljava/lang/String;",
+        "i32" => "I",
+        t => t,
+    }
+}
+
 pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>, CompileError> {
     use CompileError::*;
 
@@ -26,8 +34,50 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     }.ok_or(ExpectedModule)?;
 
     let mut cp = crate::compiler::constant_pool::ConstantPool::new();
-    cp.insert_class(module);
-    cp.insert_class("java/lang/Object");
+    cp.insert_class(module.to_string());
+    cp.insert_class("java/lang/Object".to_string());
+
+    let mut method_count = 0;
+    let mut methods = bytes::BytesMut::new();
+
+    loop {
+        if let Some(node) = ast.next() {
+            match node.as_rule() {
+                Rule::function_declaration => {
+                    method_count += 1;
+                    methods.put_u16(9);
+
+                    let mut tree = node.into_inner();
+                    let name = tree.next().unwrap().as_str();
+                    let idx = cp.insert_utf8(name.to_string()); methods.put_u16(idx);
+
+                    let mut params = vec![];
+                    let next = loop {
+                        let node = tree.next().unwrap();
+                        if node.as_rule() != Rule::parameter { break node; };
+
+                        let mut param = node.into_inner();
+
+                        let _ = param.next();
+                        let t = parse_type(param.next().unwrap().as_str());
+                        let arr = param.next().is_some();
+
+                        params.push(format!("{}{}", if arr { "[" } else { "" }, t));
+                    };
+
+                    let ret_type =
+                        if next.as_rule() == Rule::block { "V" }
+                        else { parse_type(next.as_str()) };
+
+                    let signature = format!("({}){}", params.join(""), ret_type);
+                    let idx = cp.insert_utf8(signature); methods.put_u16(idx);
+
+                    methods.put_u16(0);
+                },
+                _ => {},
+            }
+        } else { break; }
+    }
 
     let mut body = bytes::BytesMut::new();
     body.put_u16(access::PUBLIC | access::SUPER);
@@ -35,6 +85,9 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     body.put_u16(4);
     body.put_u16(0);
     body.put_u16(0);
+    body.put_u16(method_count);
+    body.put(methods);
+    /*
     body.put_u16(1);
     {
         // meta
@@ -73,6 +126,7 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
         body.put_u32(attribute.len() as u32);
         body.put(attribute);
     }
+    */
     body.put_u16(0);
 
     let mut res = bytes::BytesMut::new();

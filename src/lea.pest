@@ -9,7 +9,8 @@ ident = { (ASCII_ALPHANUMERIC | "_")+ }
 Int32 = { "i32" }
 Int64 = { "i64" }
 object = { (ASCII_ALPHANUMERIC)+ }
-type = _{ (Int32 | Int64 | object) ~ "[]"? }
+array = { "[]" }
+type = _{ (Int32 | Int64 | object) ~ array? }
 
 parameter = { ident ~ ":" ~ type }
 parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }

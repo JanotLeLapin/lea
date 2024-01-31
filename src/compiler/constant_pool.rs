@@ -6,8 +6,8 @@ use bytes::{BufMut, BytesMut};
 pub enum Ref { Field, Method, InterfaceMethod }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub enum Constant<'a> {
-    UTF8(&'a str),
+pub enum Constant {
+    UTF8(String),
     Class(u16),
     String(u16),
     NameAndType(u16, u16),
@@ -15,12 +15,12 @@ pub enum Constant<'a> {
 }
 
 #[derive(Debug)]
-pub struct ConstantPool<'a> {
+pub struct ConstantPool {
     count: u16,
-    pool: HashMap<Constant<'a>, u16>,
+    pool: HashMap<Constant, u16>,
 }
 
-impl<'a> ConstantPool<'a> {
+impl ConstantPool {
     pub fn new() -> Self {
         Self {
             count: 0,
@@ -28,7 +28,7 @@ impl<'a> ConstantPool<'a> {
         }
     }
 
-    fn get_or_insert(&mut self, constant: Constant<'a>) -> u16 {
+    fn get_or_insert(&mut self, constant: Constant) -> u16 {
         if let Some(res) = self.pool.get(&constant) {
             *res
         } else {
@@ -38,27 +38,27 @@ impl<'a> ConstantPool<'a> {
         }
     }
 
-    pub fn insert_utf8(&mut self, value: &'a str) -> u16 {
+    pub fn insert_utf8(&mut self, value: String) -> u16 {
         self.get_or_insert(Constant::UTF8(value))
     }
 
-    pub fn insert_class(&mut self, class: &'a str) -> u16 {
+    pub fn insert_class(&mut self, class: String) -> u16 {
         let idx = self.insert_utf8(class);
         self.get_or_insert(Constant::Class(idx))
     }
 
-    pub fn insert_string(&mut self, string: &'a str) -> u16 {
+    pub fn insert_string(&mut self, string: String) -> u16 {
         let idx = self.insert_utf8(string);
         self.get_or_insert(Constant::String(idx))
     }
 
-    pub fn insert_name_and_type(&mut self, name: &'a str, t: &'a str) -> u16 {
+    pub fn insert_name_and_type(&mut self, name: String, t: String) -> u16 {
         let name = self.insert_utf8(name);
         let t = self.insert_utf8(t);
         self.get_or_insert(Constant::NameAndType(name, t))
     }
 
-    pub fn insert_ref(&mut self, reference: Ref, class: &'a str, name: &'a str, t: &'a str) -> u16 {
+    pub fn insert_ref(&mut self, reference: Ref, class: String, name: String, t: String) -> u16 {
         let class_idx = self.insert_class(class);
         let idx = self.insert_name_and_type(name, t);
         self.get_or_insert(Constant::Ref(reference, class_idx, idx))
