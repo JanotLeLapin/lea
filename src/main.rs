@@ -13,7 +13,6 @@ fn main() {
     match LeaParser::parse(Rule::source, &src) {
         Err(e) => println!("{e}"),
         Ok(mut parsed) => {
-            println!("{parsed:#?}");
             let mut pairs = parsed.next().unwrap().into_inner();
             let class = compiler::compile(&mut pairs).unwrap();
             std::fs::write("Main.class", &class).unwrap();
