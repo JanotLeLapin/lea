@@ -28,8 +28,17 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     let mut cp = crate::compiler::constant_pool::ConstantPool::new();
     cp.insert_class(module);
     cp.insert_class("java/lang/Object");
-    cp.insert_string("Hello, World!");
     cp.insert_ref(crate::compiler::constant_pool::Ref::Field, "java/lang/System", "Ljava/io/PrintStream", "out");
+    cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "java/io/PrintStream", "(Ljava/lang/String;)V", "println");
+
+    let mut body = bytes::BytesMut::new();
+    body.put_u16(access::PUBLIC | access::SUPER);
+    body.put_u16(2);
+    body.put_u16(4);
+    body.put_u16(0);
+    body.put_u16(0);
+    body.put_u16(0);
+    body.put_u16(0);
 
     let mut res = bytes::BytesMut::new();
     res.put_u32(0xCAFEBABE);
@@ -37,11 +46,7 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     res.put_u16(52);
 
     res.put(&cp.serialize()[..]);
-
-    res.put_u16(access::PUBLIC | access::SUPER);
-    res.put_u16(2);
-    res.put_u16(4);
-    res.put_u64(0);
+    res.put(body);
 
     Ok(res.to_vec())
 }
