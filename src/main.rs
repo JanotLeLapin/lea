@@ -8,9 +8,9 @@ use pest_derive::Parser;
 struct LeaParser;
 
 fn main() {
-    let a = "module Main; fn main() { print('Hello, World!'); print(); }";
+    let src = std::fs::read_to_string("./main.lea").unwrap();
 
-    match LeaParser::parse(Rule::source, a) {
+    match LeaParser::parse(Rule::source, &src) {
         Err(e) => println!("{e}"),
         Ok(mut parsed) => {
             println!("{parsed:#?}");

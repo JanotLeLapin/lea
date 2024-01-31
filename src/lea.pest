@@ -1,4 +1,4 @@
-WHITESPACE = _{ " " | "\t" }
+WHITESPACE = _{ " " | "\t" | "\n" }
 
 string_delimiter = _{ "\"" | "'" }
 string_literal = { string_delimiter ~ (!(string_delimiter) ~ ANY)* ~ string_delimiter }
@@ -9,7 +9,7 @@ ident = { (ASCII_ALPHANUMERIC | "_")+ }
 Int32 = { "i32" }
 Int64 = { "i64" }
 object = { (ASCII_ALPHANUMERIC)+ }
-type = _{ Int32 | Int64 | object }
+type = _{ (Int32 | Int64 | object) ~ "[]"? }
 
 parameter = { ident ~ ":" ~ type }
 parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
