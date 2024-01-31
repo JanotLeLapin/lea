@@ -1,9 +1,9 @@
 module Main;
 
-fn hello() -> string {
+fn hello() -> String {
   return "world";
 }
 
-fn main(args: string[]) {
+fn main(args: String[]) {
   print("Hello, World!");
 }
