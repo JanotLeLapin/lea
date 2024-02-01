@@ -7,7 +7,7 @@ fn my_print(first: String, second: i32) {
 
 fn main(args: String[]) {
   let a: String = "Hello";
-  let b: i32 = 69;
+  let b: char = 'a';
 
   print(a);
   print(b);

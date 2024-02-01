@@ -1,6 +1,7 @@
 #[derive(Debug, Clone)]
 pub enum TypeId {
     I8, I16, I32, I64,
+    Char, Bool,
     Void,
     Other(String),
 }
@@ -16,6 +17,8 @@ impl std::str::FromStr for TypeId {
             "i16" => I16,
             "i32" => I32,
             "i64" => I64,
+            "char" => Char,
+            "bool" => Bool,
             s => Other(s.to_string()),
         })
     }
@@ -44,6 +47,8 @@ impl ToString for Type {
             I16 => "S",
             I32 => "I",
             I64 => "J",
+            Char => "C",
+            Bool => "B",
             Void => "V",
             Other(s) => match s.as_str() {
                 "Object" => "Ljava/lang/Object;",
