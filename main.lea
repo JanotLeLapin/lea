@@ -1,10 +1,10 @@
 module Main;
 
-fn my_print(value: String) {
-  print(value);
-  print(value);
+fn my_print(first: String, second: String) {
+  print(first);
+  print(second);
 }
 
 fn main(args: String[]) {
-  my_print("This runs on the JVM!");
+  my_print("Hello", "World");
 }

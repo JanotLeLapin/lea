@@ -69,14 +69,16 @@ impl<'a> Method<'a> {
                         "print" => {
                             code.put_u8(178); // getstatic
                             code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Field, "java/lang/System".to_string(), "out".to_string(), "Ljava/io/PrintStream;".to_string()));
-                            let arg = pairs.next().unwrap();
-                            match arg.as_rule() {
-                                Rule::ident => {
-                                    code.put_u8(42);
-                                },
-                                _ => {
-                                    code.put_u8(18); // ldc
-                                    code.put_u8(cp.insert_string(arg.as_str().to_string()) as u8);
+                            for arg in pairs {
+                                match arg.as_rule() {
+                                    Rule::ident => {
+                                        let (_, idx) = self.args.get(arg.as_str()).unwrap();
+                                        code.put_u8(42 + *idx as u8); // aload_n
+                                    },
+                                    _ => {
+                                        code.put_u8(18); // ldc
+                                        code.put_u8(cp.insert_string(arg.as_str().to_string()) as u8);
+                                    }
                                 }
                             }
                             code.put_u8(182); // invokevirtual
@@ -84,8 +86,17 @@ impl<'a> Method<'a> {
                         },
                         f => {
                             let method = methods.get(f).unwrap();
-                            code.put_u8(18); // ldc
-                            code.put_u8(cp.insert_string(pairs.next().unwrap().as_str().to_string()) as u8);
+                            for arg in pairs {
+                                match arg.as_rule() {
+                                    Rule::ident => {
+                                        code.put_u8(42); // aload_0
+                                    },
+                                    _ => {
+                                        code.put_u8(18); // ldc
+                                        code.put_u8(cp.insert_string(arg.as_str().to_string()) as u8);
+                                    }
+                                }
+                            }
                             code.put_u8(184); // invokestatic
                             code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), method.descriptor.clone()));
                         },
