@@ -87,8 +87,8 @@ impl ConstantPool {
                 },
                 Constant::NameAndType(var, t) => {
                     buf.put_u8(12);
-                    buf.put_u16(*t);
                     buf.put_u16(*var);
+                    buf.put_u16(*t);
                 },
                 Constant::Ref(reference, class, name_type) => {
                     buf.put_u8(match reference {
