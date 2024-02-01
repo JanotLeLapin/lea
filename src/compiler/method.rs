@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::Rule;
+use crate::{Rule, compiler::t::TypeId};
 use super::t::{Type, Descriptor};
 
 use bytes::BufMut;
@@ -85,7 +85,11 @@ impl<'a> Method<'a> {
                             Rule::ident => {
                                 let (t, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
                                 descriptor.args.push(t.clone());
-                                code.put_u8(42 + *idx as u8); // aload_n
+                                match t.id {
+                                    TypeId::I8 | TypeId::I16 | TypeId::I32 => code.put_u8(26 + *idx), // iload_n
+                                    TypeId::Other(_) => code.put_u8(42 + *idx), // aload_n
+                                    _ => {},
+                                }
                             },
                             _ => {
                                 code.put_u8(18); // ldc
@@ -110,13 +114,23 @@ impl<'a> Method<'a> {
                     let mut pairs = pair.into_inner();
                     let ident = pairs.next().unwrap().as_str();
                     let t = Type::new(pairs.next().unwrap().as_str().parse().unwrap(), false);
-                    let v = pairs.next().unwrap().into_inner().as_str();
+                    let v = pairs.next().unwrap();
 
                     let store_idx = (self.args.len() + vars.len()) as u8;
 
-                    code.put_u8(18); // ldc
-                    code.put_u8(cp.insert_string(v.to_string()) as u8);
-                    code.put_u8(75 + store_idx as u8); // astore_n
+                    match t.id {
+                        TypeId::I8 | TypeId::I16 | TypeId::I32 => {
+                            code.put_u8(16); // bipush
+                            code.put_u8(v.as_str().parse().unwrap());
+                            code.put_u8(59 + store_idx as u8); // istore_n
+                        },
+                        TypeId::Other(_) => {
+                            code.put_u8(18); // ldc
+                            code.put_u8(cp.insert_string(v.into_inner().as_str().to_string()) as u8);
+                            code.put_u8(75 + store_idx as u8); // astore_n
+                        },
+                        _ => {},
+                    }
 
                     vars.insert(ident, (t, store_idx));
                 },

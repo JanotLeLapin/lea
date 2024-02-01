@@ -23,7 +23,7 @@ impl std::str::FromStr for TypeId {
 
 #[derive(Debug, Clone)]
 pub struct Type {
-    id: TypeId,
+    pub id: TypeId,
     array: bool,
 }
 
