@@ -4,10 +4,6 @@ fn hello() -> String {
   return "world";
 }
 
-fn add(a: i32, b: i32) -> i32 {
-  return 5;
-}
-
 fn main(args: String[]) {
-  print("Hello, World!");
+  print("This runs on the JVM!");
 }
