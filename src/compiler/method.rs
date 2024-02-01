@@ -79,10 +79,12 @@ impl<'a> Method<'a> {
                         _ => {},
                     }
 
+                    let mut descriptor = Descriptor::new(Vec::new(), Type::new(super::t::TypeId::Void, false));
                     for arg in pairs {
                         match arg.as_rule() {
                             Rule::ident => {
-                                let (_, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
+                                let (t, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
+                                descriptor.args.push(t.clone());
                                 code.put_u8(42 + *idx as u8); // aload_n
                             },
                             _ => {
@@ -95,7 +97,7 @@ impl<'a> Method<'a> {
                     match ident {
                         "print" => {
                             code.put_u8(182); // invokevirtual
-                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "java/io/PrintStream".to_string(), "println".to_string(), "(Ljava/lang/String;)V".to_string()));
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "java/io/PrintStream".to_string(), "println".to_string(), descriptor.to_string()));
                         },
                         f => {
                             code.put_u8(184); // invokestatic
