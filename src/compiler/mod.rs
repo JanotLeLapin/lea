@@ -2,6 +2,8 @@ pub mod constant_pool;
 pub mod method;
 pub mod attribute;
 
+use std::collections::HashMap;
+
 use crate::Rule;
 
 use bytes::BufMut;
@@ -19,17 +21,17 @@ impl Version {
 }
 
 #[derive(Debug)]
-pub struct ClassFile {
+pub struct ClassFile<'a> {
     magic: u32,
     version: Version,
     constant_pool: constant_pool::ConstantPool,
     access_flags: u16,
     this_class: String,
     super_class: String,
-    methods: Vec<Vec<u8>>,
+    methods: HashMap<String, method::Method<'a>>,
 }
 
-impl ClassFile {
+impl<'a> ClassFile<'a> {
     pub fn new(magic: u32, version: Version, access_flags: u16, this_class: String, super_class: String) -> Self {
         Self {
             magic,
@@ -38,7 +40,7 @@ impl ClassFile {
             access_flags,
             this_class,
             super_class,
-            methods: Vec::new(),
+            methods: HashMap::new(),
         }
     }
 
@@ -53,8 +55,8 @@ impl ClassFile {
         body.put_u16(0);
 
         body.put_u16(self.methods.len() as u16);
-        for method in &self.methods {
-            body.put_slice(&method);
+        for (_, method) in &mut self.methods {
+            body.put_slice(&method.compile(&mut self.constant_pool));
         }
 
         body.put_u16(0);
@@ -100,8 +102,8 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     for node in ast {
         match node.as_rule() {
             Rule::function_declaration => {
-                let method = self::method::compile_method(&mut node.into_inner(), &mut class.constant_pool);
-                class.methods.push(method);
+                let method = self::method::Method::parse(&mut node.into_inner());
+                class.methods.insert(method.name.to_string(), method);
             },
             _ => {},
         }

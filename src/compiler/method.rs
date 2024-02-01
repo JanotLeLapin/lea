@@ -1,36 +1,63 @@
+use std::collections::HashMap;
+
 use crate::Rule;
 
 use bytes::BufMut;
 
-pub fn compile_method<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
-    let mut buf = bytes::BytesMut::new();
-    buf.put_u16(1 | 8);
-    buf.put_u16(cp.insert_utf8(pairs.next().unwrap().as_str().to_string()));
+#[derive(Debug)]
+pub struct Method<'a> {
+    pub name: &'a str,
+    descriptor: String,
+    args: HashMap<String, (String, u16)>,
+    code: pest::iterators::Pairs<'a, Rule>,
+}
 
-    let mut params = vec![];
-    let next = loop {
-        let node = pairs.next().unwrap();
-        if node.as_rule() != Rule::parameter { break node; }
+impl<'a> Method<'a> {
+    pub fn parse(pairs: &mut pest::iterators::Pairs<'a, Rule>) -> Self {
+        let ident = pairs.next().unwrap().as_str();
 
-        let mut pairs = node.into_inner();
-        let _ = pairs.next();
-        let t = crate::compiler::parse_type(pairs.next().unwrap().as_str());
-        let is_array = pairs.next().is_some();
+        let mut params = vec![];
+        let next = loop {
+            let node = pairs.next().unwrap();
+            if node.as_rule() != Rule::parameter { break node; }
 
-        if is_array { params.push(format!("[{}", t)) }
-        else { params.push(t.to_string()) }
-    };
+            let mut pairs = node.into_inner();
+            let ident = pairs.next().unwrap().as_str();
+            let t = crate::compiler::parse_type(pairs.next().unwrap().as_str());
+            let is_array = pairs.next().is_some();
 
-    let (ret_type, block) =
-        if next.as_rule() == Rule::block { ("V", next) }
-        else {
-            (crate::compiler::parse_type(next.as_str()), pairs.next().unwrap())
+            params.push((ident, if is_array { format!("[{}", t) } else { t.to_string() }));
         };
-    buf.put_u16(cp.insert_utf8(format!("({}){}", params.join(""), ret_type)));
 
-    let attribute = super::attribute::compile_code(&mut block.into_inner(), cp);
+        let (ret_type, block) =
+            if next.as_rule() == Rule::block { ("V", next) }
+            else {
+                (crate::compiler::parse_type(next.as_str()), pairs.next().unwrap())
+            };
 
-    buf.put_u16(1);
-    buf.put_slice(&attribute);
-    buf.to_vec()
+        let mut map = HashMap::new();
+        for (ident, t) in &params {
+            map.insert(ident.to_string(), (t.to_string(), map.len() as u16));
+        }
+
+        Self {
+            name: ident,
+            descriptor: format!("({}){}", params.into_iter().map(|(_, b)| b).collect::<Vec<_>>().join(""), ret_type),
+            args: map,
+            code: block.into_inner(),
+        }
+    }
+
+    pub fn compile(&mut self, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+        let mut buf = bytes::BytesMut::new();
+        buf.put_u16(1 | 8);
+        buf.put_u16(cp.insert_utf8(self.name.to_string()));
+        buf.put_u16(cp.insert_utf8(self.descriptor.clone()));
+
+        let attribute = super::attribute::compile_code(&mut self.code, cp);
+
+        buf.put_u16(1);
+        buf.put_slice(&attribute);
+        buf.to_vec()
+    }
 }
