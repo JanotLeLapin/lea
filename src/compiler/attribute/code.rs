@@ -26,7 +26,10 @@ pub fn compile_code<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut c
                         code.put_u8(182); // invokevirtual
                         code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "java/io/PrintStream".to_string(), "println".to_string(), "(Ljava/lang/String;)V".to_string()));
                     },
-                    _ => {},
+                    f => {
+                        code.put_u8(184); // invokestatic
+                        code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), "()Ljava/lang/String;".to_string()));
+                    },
                 }
             }
             _ => {
