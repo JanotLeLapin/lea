@@ -19,15 +19,12 @@ impl Version {
     }
 }
 
-pub type MethodMap<'a> = HashMap<String, method::Method<'a>>;
-
 #[derive(Debug)]
 pub struct ClassFile<'a> {
     magic: u32,
     version: Version,
-    constant_pool: constant_pool::ConstantPool,
     access_flags: u16,
-    this_class: String,
+    pub this_class: String,
     super_class: String,
     methods: HashMap<String, method::Method<'a>>,
 }
@@ -37,7 +34,6 @@ impl<'a> ClassFile<'a> {
         Self {
             magic,
             version,
-            constant_pool: constant_pool::ConstantPool::new(),
             access_flags,
             this_class,
             super_class,
@@ -46,10 +42,12 @@ impl<'a> ClassFile<'a> {
     }
 
     pub fn serialize(&mut self) -> Vec<u8> {
+        let mut cp = constant_pool::ConstantPool::new();
+
         let mut body = bytes::BytesMut::new();
         body.put_u16(self.access_flags);
-        body.put_u16(self.constant_pool.insert_class(self.this_class.clone()));
-        body.put_u16(self.constant_pool.insert_class(self.super_class.clone()));
+        body.put_u16(cp.insert_class(self.this_class.clone()));
+        body.put_u16(cp.insert_class(self.super_class.clone()));
 
         body.put_u16(0);
 
@@ -57,8 +55,8 @@ impl<'a> ClassFile<'a> {
 
         body.put_u16(self.methods.len() as u16);
         for (_, method) in &self.methods {
-            let compiled_code = method.compile_code(&self.methods, &mut self.constant_pool);
-            body.put_slice(&method.compile(&mut self.constant_pool, compiled_code));
+            let compiled_code = method.compile_code(&self, &mut cp);
+            body.put_slice(&method.compile(&mut cp, compiled_code));
         }
 
         body.put_u16(0);
@@ -69,7 +67,7 @@ impl<'a> ClassFile<'a> {
         buf.put_u16(self.version.minor);
         buf.put_u16(self.version.major);
 
-        buf.put_slice(&self.constant_pool.serialize());
+        buf.put_slice(&cp.serialize());
         buf.put_slice(&body);
 
         buf.to_vec()
@@ -89,7 +87,7 @@ pub fn parse_type<'a>(t: &'a str) -> &'a str {
     }
 }
 
-pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>, CompileError> {
+pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>, CompileError> {
     let module = ast.next().unwrap();
     if module.as_rule() != Rule::module_statement { return Err(CompileError::ExpectedModule) }
 
@@ -111,6 +109,5 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
         }
     }
 
-    let compiled = class.serialize();
-    Ok(compiled)
+    Ok(class)
 }

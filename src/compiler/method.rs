@@ -48,7 +48,7 @@ impl<'a> Method<'a> {
         }
     }
 
-    pub fn compile_code(&self, methods: &super::MethodMap, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+    pub fn compile_code(&self, class: &crate::compiler::ClassFile<'a>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
         let pairs = self.code.clone().into_inner();
 
         let mut code = bytes::BytesMut::new();
@@ -95,8 +95,8 @@ impl<'a> Method<'a> {
                         },
                         f => {
                             code.put_u8(184); // invokestatic
-                            let method = methods.get(f).unwrap();
-                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), method.descriptor.clone()));
+                            let method = class.methods.get(f).unwrap();
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, class.this_class.clone(), f.to_string(), method.descriptor.clone()));
                         },
                     }
                 }

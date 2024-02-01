@@ -14,8 +14,8 @@ fn main() {
         Err(e) => println!("{e}"),
         Ok(mut parsed) => {
             let mut pairs = parsed.next().unwrap().into_inner();
-            let class = compiler::compile(&mut pairs).unwrap();
-            std::fs::write("Main.class", &class).unwrap();
+            let mut class = compiler::compile(&mut pairs).unwrap();
+            std::fs::write(format!("{}.class", class.this_class), &class.serialize()).unwrap();
         }
     }
 }
