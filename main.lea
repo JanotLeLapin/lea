@@ -1,11 +1,10 @@
 module Main;
 
-fn hello() -> String {
-  print("hello function was called");
-  return "world";
+fn my_print(value: String) {
+  print(value);
+  print(value);
 }
 
 fn main(args: String[]) {
-  hello();
-  print("This runs on the JVM!");
+  my_print("This runs on the JVM!");
 }

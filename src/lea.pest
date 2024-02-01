@@ -16,7 +16,9 @@ parameter = { ident ~ ":" ~ type }
 parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 
 module_statement = { "module" ~ WHITESPACE* ~ ident }
-call_expression = { ident ~ "(" ~ (literal ~ ("," ~ literal)*)? ~ ")" }
+
+argument = _{ (ident | literal) }
+call_expression = { ident ~ "(" ~ (argument ~ ("," ~ argument)*)? ~ ")" }
 return_statement = { "return" ~ (ident | literal)? }
 statement = _{ (module_statement | call_expression | return_statement) ~ ";" }
 
