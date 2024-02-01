@@ -2,7 +2,9 @@ use bytes::{BufMut, BytesMut};
 
 use crate::Rule;
 
-pub fn compile_code<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+pub fn compile_code<'a>(code: pest::iterators::Pair<'a, Rule>, methods: &crate::compiler::MethodMap, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+    let pairs = code.into_inner();
+
     let mut code = BytesMut::new();
 
     let mut returned = false;
@@ -28,7 +30,8 @@ pub fn compile_code<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut c
                     },
                     f => {
                         code.put_u8(184); // invokestatic
-                        code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), "()Ljava/lang/String;".to_string()));
+                        let method = methods.get(f).unwrap();
+                        code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), method.descriptor.clone()));
                     },
                 }
             }

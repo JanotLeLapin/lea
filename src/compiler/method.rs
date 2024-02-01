@@ -7,9 +7,9 @@ use bytes::BufMut;
 #[derive(Debug)]
 pub struct Method<'a> {
     pub name: &'a str,
-    descriptor: String,
-    args: HashMap<String, (String, u16)>,
-    code: pest::iterators::Pairs<'a, Rule>,
+    pub descriptor: String,
+    pub args: HashMap<String, (String, u16)>,
+    code: pest::iterators::Pair<'a, Rule>,
 }
 
 impl<'a> Method<'a> {
@@ -44,17 +44,17 @@ impl<'a> Method<'a> {
             name: ident,
             descriptor: format!("({}){}", params.into_iter().map(|(_, b)| b).collect::<Vec<_>>().join(""), ret_type),
             args: map,
-            code: block.into_inner(),
+            code: block,
         }
     }
 
-    pub fn compile(&mut self, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+    pub fn compile(&self, methods: &super::MethodMap, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
         let mut buf = bytes::BytesMut::new();
         buf.put_u16(1 | 8);
         buf.put_u16(cp.insert_utf8(self.name.to_string()));
         buf.put_u16(cp.insert_utf8(self.descriptor.clone()));
 
-        let attribute = super::attribute::compile_code(&mut self.code, cp);
+        let attribute = super::attribute::compile_code(self.code.clone(), methods, cp);
 
         buf.put_u16(1);
         buf.put_slice(&attribute);

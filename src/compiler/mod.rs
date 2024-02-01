@@ -20,6 +20,8 @@ impl Version {
     }
 }
 
+pub type MethodMap<'a> = HashMap<String, method::Method<'a>>;
+
 #[derive(Debug)]
 pub struct ClassFile<'a> {
     magic: u32,
@@ -55,8 +57,8 @@ impl<'a> ClassFile<'a> {
         body.put_u16(0);
 
         body.put_u16(self.methods.len() as u16);
-        for (_, method) in &mut self.methods {
-            body.put_slice(&method.compile(&mut self.constant_pool));
+        for (_, method) in &self.methods {
+            body.put_slice(&method.compile(&self.methods, &mut self.constant_pool));
         }
 
         body.put_u16(0);
