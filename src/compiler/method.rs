@@ -49,6 +49,8 @@ impl<'a> Method<'a> {
     }
 
     pub fn compile_code(&self, class: &crate::compiler::ClassFile<'a>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+        let mut vars = HashMap::new();
+
         let pairs = self.code.clone().into_inner();
 
         let mut code = bytes::BytesMut::new();
@@ -78,7 +80,7 @@ impl<'a> Method<'a> {
                     for arg in pairs {
                         match arg.as_rule() {
                             Rule::ident => {
-                                let (_, idx) = self.args.get(arg.as_str()).unwrap();
+                                let (_, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
                                 code.put_u8(42 + *idx as u8); // aload_n
                             },
                             _ => {
@@ -99,7 +101,21 @@ impl<'a> Method<'a> {
                             code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, class.this_class.clone(), f.to_string(), method.descriptor.clone()));
                         },
                     }
-                }
+                },
+                Rule::varDecl => {
+                    let mut pairs = pair.into_inner();
+                    let ident = pairs.next().unwrap().as_str();
+                    let t = pairs.next().unwrap().as_str();
+                    let v = pairs.next().unwrap().into_inner().as_str();
+
+                    let store_idx = (self.args.len() + vars.len()) as u16;
+
+                    code.put_u8(18); // ldc
+                    code.put_u8(cp.insert_string(v.to_string()) as u8);
+                    code.put_u8(75 + store_idx as u8); // astore_n
+
+                    vars.insert(ident, (t.to_string(), store_idx));
+                },
                 _ => {
                     println!("{pair:?}");
                 },

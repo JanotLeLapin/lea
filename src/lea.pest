@@ -12,7 +12,8 @@ params = _{ "(" ~ (param ~ ("," ~ param)*)? ~ ")" }
 
 block = { "{" ~ (stmt*)? ~ "}" }
 
-stmt = _{ (expr | returnStmt) ~ ";" }
+stmt = _{ (expr | varDecl | returnStmt) ~ ";" }
+varDecl = { "let" ~ ident ~ ":" ~ type ~ "=" ~ (lit | ident) }
 returnStmt = { "return" ~ (ident | lit)? }
 
 expr = _{ callExpr }

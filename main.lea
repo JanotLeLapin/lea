@@ -6,5 +6,7 @@ fn my_print(first: String, second: String) {
 }
 
 fn main(args: String[]) {
-  my_print("Hello", "World");
+  let a: String = "Hello";
+  let b: String = "world";
+  my_print(a, b);
 }
