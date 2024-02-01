@@ -19,7 +19,7 @@ impl<'a> Method<'a> {
         let mut params = vec![];
         let next = loop {
             let node = pairs.next().unwrap();
-            if node.as_rule() != Rule::parameter { break node; }
+            if node.as_rule() != Rule::param { break node; }
 
             let mut pairs = node.into_inner();
             let ident = pairs.next().unwrap().as_str();
@@ -56,13 +56,13 @@ impl<'a> Method<'a> {
         let mut returned = false;
         for pair in pairs {
             match pair.as_rule() {
-                Rule::return_statement => {
+                Rule::returnStmt => {
                     code.put_u8(18); // ldc
                     code.put_u8(cp.insert_string(pair.into_inner().as_str().to_string()) as u8);
                     code.put_u8(176); // areturn
                     returned = true;
                 },
-                Rule::call_expression => {
+                Rule::callExpr => {
                     let mut pairs = pair.into_inner();
 
                     let ident = pairs.next().unwrap().as_str();

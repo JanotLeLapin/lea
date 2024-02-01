@@ -89,7 +89,7 @@ pub fn parse_type<'a>(t: &'a str) -> &'a str {
 
 pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>, CompileError> {
     let module = ast.next().unwrap();
-    if module.as_rule() != Rule::module_statement { return Err(CompileError::ExpectedModule) }
+    if module.as_rule() != Rule::module { return Err(CompileError::ExpectedModule) }
 
     let mut class = ClassFile::new(
         0xCAFEBABE,
@@ -101,7 +101,7 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFi
 
     for node in ast {
         match node.as_rule() {
-            Rule::function_declaration => {
+            Rule::functionDecl => {
                 let method = self::method::Method::parse(&mut node.into_inner());
                 class.methods.insert(method.name.to_string(), method);
             },

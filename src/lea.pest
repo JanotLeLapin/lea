@@ -1,4 +1,28 @@
-WHITESPACE = _{ " " | "\t" | "\n" }
+source = {
+  SOI ~
+  (module | functionDecl)* ~
+  EOI
+}
+
+module = { "module" ~ ident ~ ";" }
+functionDecl = { "fn" ~ ident ~ params ~ ("->" ~ type)? ~ block }
+
+param = { ident ~ ":" ~ type }
+params = _{ "(" ~ (param ~ ("," ~ param)*)? ~ ")" }
+
+block = { "{" ~ (stmt*)? ~ "}" }
+
+stmt = _{ (expr | returnStmt) ~ ";" }
+returnStmt = { "return" ~ (ident | lit)? }
+
+expr = _{ callExpr }
+callExpr = { ident ~ "(" ~ (arg ~ ("," ~ arg)*)? ~ ")" }
+
+arg = _{ (ident | lit) }
+
+lit = _{ numLit | strLit }
+numLit = { (ASCII_DIGIT | ".")+ }
+strLit = ${ "\"" ~ inner ~ "\"" }
 
 char = {
     !("\"" | "\\") ~ ANY
@@ -7,36 +31,12 @@ char = {
 }
 inner = @{ char* }
 
-string_literal = ${ "\"" ~ inner ~ "\"" }
-number_literal = { (ASCII_DIGIT | ".")+ }
-literal = _{ string_literal | number_literal }
-
 ident = { (ASCII_ALPHANUMERIC | "_")+ }
 
-Int32 = { "i32" }
-Int64 = { "i64" }
+int32 = { "i32" }
+int64 = { "i64" }
 object = { (ASCII_ALPHANUMERIC)+ }
 array = { "[]" }
-type = _{ (Int32 | Int64 | object) ~ array? }
+type = _{ (int32 | int64 | object) ~ array? }
 
-parameter = { ident ~ ":" ~ type }
-parameters = _{ "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
-
-module_statement = { "module" ~ WHITESPACE* ~ ident }
-
-argument = _{ (ident | literal) }
-call_expression = { ident ~ "(" ~ (argument ~ ("," ~ argument)*)? ~ ")" }
-return_statement = { "return" ~ (ident | literal)? }
-statement = _{ (module_statement | call_expression | return_statement) ~ ";" }
-
-block = {
-  "{" ~ "}" |
-  "{" ~ statement* ~ "}"
-}
-function_declaration = { "fn" ~ ident ~ parameters ~ ("->" ~ type)? ~ block }
-
-source = {
-  SOI ~
-  (statement | function_declaration)* ~
-  EOI
-}
+WHITESPACE = _{ " " | "\t" | "\n" }
