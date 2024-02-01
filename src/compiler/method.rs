@@ -83,7 +83,7 @@ impl<'a> Method<'a> {
                             },
                             _ => {
                                 code.put_u8(18); // ldc
-                                code.put_u8(cp.insert_string(arg.as_str().to_string()) as u8);
+                                code.put_u8(cp.insert_string(arg.into_inner().next().unwrap().as_str().to_string()) as u8);
                             }
                         }
                     }

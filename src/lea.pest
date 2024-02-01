@@ -1,8 +1,15 @@
 WHITESPACE = _{ " " | "\t" | "\n" }
 
-string_delimiter = _{ "\"" | "'" }
-string_literal = { string_delimiter ~ (!(string_delimiter) ~ ANY)* ~ string_delimiter }
-literal = _{ string_literal }
+char = {
+    !("\"" | "\\") ~ ANY
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+inner = @{ char* }
+
+string_literal = ${ "\"" ~ inner ~ "\"" }
+number_literal = { (ASCII_DIGIT | ".")+ }
+literal = _{ string_literal | number_literal }
 
 ident = { (ASCII_ALPHANUMERIC | "_")+ }
 
