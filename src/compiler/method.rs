@@ -3,7 +3,9 @@ use crate::Rule;
 use bytes::BufMut;
 
 pub fn compile_method<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
-    let ident = pairs.next().unwrap().as_str();
+    let mut buf = bytes::BytesMut::new();
+    buf.put_u16(1 | 8);
+    buf.put_u16(cp.insert_utf8(pairs.next().unwrap().as_str().to_string()));
 
     let mut params = vec![];
     let next = loop {
@@ -19,14 +21,15 @@ pub fn compile_method<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut
         else { params.push(t.to_string()) }
     };
 
-    let ret_type =
-        if next.as_rule() == Rule::block { "V" }
-        else { crate::compiler::parse_type(next.as_str()) };
-
-    let mut buf = bytes::BytesMut::new();
-    buf.put_u16(1 | 8);
-    buf.put_u16(cp.insert_utf8(ident.to_string()));
+    let (ret_type, block) =
+        if next.as_rule() == Rule::block { ("V", next) }
+        else {
+            (crate::compiler::parse_type(next.as_str()), pairs.next().unwrap())
+        };
     buf.put_u16(cp.insert_utf8(format!("({}){}", params.join(""), ret_type)));
+
+    let attribute = super::attribute::compile_code(&mut block.into_inner(), cp);
+
     buf.put_u16(0);
     buf.to_vec()
 }
