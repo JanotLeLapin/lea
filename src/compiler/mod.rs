@@ -25,7 +25,7 @@ pub struct ClassFile {
     access_flags: u16,
     this_class: String,
     super_class: String,
-    methods: Vec<method::Method>,
+    methods: Vec<Vec<u8>>,
 }
 
 impl ClassFile {
@@ -53,7 +53,7 @@ impl ClassFile {
 
         body.put_u16(self.methods.len() as u16);
         for method in &self.methods {
-            body.put_slice(&method.serialize(&mut self.constant_pool));
+            body.put_slice(&method);
         }
 
         body.put_u16(0);
@@ -99,7 +99,7 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>
     for node in ast {
         match node.as_rule() {
             Rule::function_declaration => {
-                let method = self::method::Method::compile(&mut node.into_inner());
+                let method = self::method::compile_method(&mut node.into_inner(), &mut class.constant_pool);
                 class.methods.push(method);
             },
             _ => {},
