@@ -30,6 +30,7 @@ pub fn compile_method<'a>(pairs: &mut pest::iterators::Pairs<'a, Rule>, cp: &mut
 
     let attribute = super::attribute::compile_code(&mut block.into_inner(), cp);
 
-    buf.put_u16(0);
+    buf.put_u16(1);
+    buf.put_slice(&attribute);
     buf.to_vec()
 }

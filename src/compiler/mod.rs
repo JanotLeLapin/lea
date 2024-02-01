@@ -1,5 +1,6 @@
 pub mod constant_pool;
 pub mod method;
+pub mod attribute;
 
 use crate::Rule;
 
