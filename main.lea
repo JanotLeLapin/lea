@@ -7,8 +7,8 @@ fn my_print(first: String, second: i32) {
 
 fn main(args: String[]) {
   let a: String = "Hello";
-  let b: char = 'a';
+  let c: bool = true;
 
   print(a);
-  print(b);
+  print(c);
 }

@@ -25,6 +25,7 @@ lit = _{ numLit | strLit | charLit }
 numLit = { (ASCII_DIGIT | ".")+ }
 strLit = ${ "\"" ~ inner ~ "\"" }
 charLit = { "'" ~ char ~ "'" }
+boolLit = { "true" | "false" }
 
 char = {
     !("\"" | "\\") ~ ANY

@@ -86,7 +86,7 @@ impl<'a> Method<'a> {
                                 let (t, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
                                 descriptor.args.push(t.clone());
                                 match t.id {
-                                    TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char
+                                    TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool
                                         => code.put_u8(26 + *idx), // iload_n
                                     TypeId::Other(_) => code.put_u8(42 + *idx), // aload_n
                                     _ => {},
@@ -130,6 +130,14 @@ impl<'a> Method<'a> {
                             code.put_u8(v.as_str().chars().skip(1).next().unwrap() as u32 as u8);
                             code.put_u8(59 + store_idx as u8) // istore_n
                         },
+                        TypeId::Bool => {
+                            code.put_u16(16); // bipush
+                            code.put_u8(match v.as_str() {
+                                "true" => 1,
+                                _ => 0,
+                            });
+                            code.put_u8(59 + store_idx as u8) // istore_n
+                        }
                         TypeId::Other(_) => {
                             code.put_u8(18); // ldc
                             code.put_u8(cp.insert_string(v.into_inner().as_str().to_string()) as u8);

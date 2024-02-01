@@ -48,7 +48,7 @@ impl ToString for Type {
             I32 => "I",
             I64 => "J",
             Char => "C",
-            Bool => "B",
+            Bool => "Z",
             Void => "V",
             Other(s) => match s.as_str() {
                 "Object" => "Ljava/lang/Object;",
