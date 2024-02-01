@@ -1,6 +1,5 @@
 pub mod constant_pool;
 pub mod method;
-pub mod attribute;
 
 use std::collections::HashMap;
 
@@ -58,7 +57,8 @@ impl<'a> ClassFile<'a> {
 
         body.put_u16(self.methods.len() as u16);
         for (_, method) in &self.methods {
-            body.put_slice(&method.compile(&self.methods, &mut self.constant_pool));
+            let compiled_code = method.compile_code(&self.methods, &mut self.constant_pool);
+            body.put_slice(&method.compile(&mut self.constant_pool, compiled_code));
         }
 
         body.put_u16(0);

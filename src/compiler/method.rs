@@ -7,8 +7,8 @@ use bytes::BufMut;
 #[derive(Debug)]
 pub struct Method<'a> {
     pub name: &'a str,
-    pub descriptor: String,
-    pub args: HashMap<String, (String, u16)>,
+    descriptor: String,
+    args: HashMap<String, (String, u16)>,
     code: pest::iterators::Pair<'a, Rule>,
 }
 
@@ -48,16 +48,81 @@ impl<'a> Method<'a> {
         }
     }
 
-    pub fn compile(&self, methods: &super::MethodMap, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+    pub fn compile_code(&self, methods: &super::MethodMap, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+        let pairs = self.code.clone().into_inner();
+
+        let mut code = bytes::BytesMut::new();
+
+        let mut returned = false;
+        for pair in pairs {
+            match pair.as_rule() {
+                Rule::return_statement => {
+                    code.put_u8(18); // ldc
+                    code.put_u8(cp.insert_string(pair.into_inner().as_str().to_string()) as u8);
+                    code.put_u8(176); // areturn
+                    returned = true;
+                },
+                Rule::call_expression => {
+                    let mut pairs = pair.into_inner();
+
+                    match pairs.next().unwrap().as_str() {
+                        "print" => {
+                            code.put_u8(178); // getstatic
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Field, "java/lang/System".to_string(), "out".to_string(), "Ljava/io/PrintStream;".to_string()));
+                            let arg = pairs.next().unwrap();
+                            match arg.as_rule() {
+                                Rule::ident => {
+                                    code.put_u8(42);
+                                },
+                                _ => {
+                                    code.put_u8(18); // ldc
+                                    code.put_u8(cp.insert_string(arg.as_str().to_string()) as u8);
+                                }
+                            }
+                            code.put_u8(182); // invokevirtual
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "java/io/PrintStream".to_string(), "println".to_string(), "(Ljava/lang/String;)V".to_string()));
+                        },
+                        f => {
+                            let method = methods.get(f).unwrap();
+                            code.put_u8(18); // ldc
+                            code.put_u8(cp.insert_string(pairs.next().unwrap().as_str().to_string()) as u8);
+                            code.put_u8(184); // invokestatic
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, "Main".to_string(), f.to_string(), method.descriptor.clone()));
+                        },
+                    }
+                }
+                _ => {
+                    println!("{pair:?}");
+                },
+            }
+        }
+
+        if !returned { code.put_u8(177); }
+
+        let mut body = bytes::BytesMut::new();
+        body.put_u16(16);
+        body.put_u16(16);
+        body.put_u32(code.len() as u32);
+        body.put_slice(&code);
+        body.put_u16(0);
+        body.put_u16(0);
+
+        let mut buf = bytes::BytesMut::new();
+        buf.put_u16(cp.insert_utf8("Code".to_string()));
+        buf.put_u32(body.len() as u32);
+        buf.put_slice(&body);
+
+        buf.to_vec()
+    }
+
+    pub fn compile(&self, cp: &mut crate::compiler::constant_pool::ConstantPool, compiled_code: Vec<u8>) -> Vec<u8> {
         let mut buf = bytes::BytesMut::new();
         buf.put_u16(1 | 8);
         buf.put_u16(cp.insert_utf8(self.name.to_string()));
         buf.put_u16(cp.insert_utf8(self.descriptor.clone()));
 
-        let attribute = super::attribute::compile_code(self.code.clone(), methods, cp);
-
         buf.put_u16(1);
-        buf.put_slice(&attribute);
+        buf.put_slice(&compiled_code);
         buf.to_vec()
     }
 }
