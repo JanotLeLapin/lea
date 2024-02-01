@@ -1,5 +1,6 @@
 pub mod constant_pool;
 pub mod method;
+pub mod t;
 
 use std::collections::HashMap;
 
@@ -77,14 +78,6 @@ impl<'a> ClassFile<'a> {
 #[derive(Debug)]
 pub enum CompileError {
     ExpectedModule,
-}
-
-pub fn parse_type<'a>(t: &'a str) -> &'a str {
-    match t {
-        "String" => "Ljava/lang/String;",
-        "i32" => "I",
-        t => t,
-    }
 }
 
 pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>, CompileError> {

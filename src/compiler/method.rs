@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 
 use crate::Rule;
+use super::t::{Type, Descriptor};
 
 use bytes::BufMut;
 
 #[derive(Debug)]
 pub struct Method<'a> {
     pub name: &'a str,
-    descriptor: String,
-    args: HashMap<String, (String, u16)>,
+    descriptor: Descriptor,
+    args: HashMap<String, (Type, u8)>,
     code: pest::iterators::Pair<'a, Rule>,
 }
 
@@ -23,27 +24,28 @@ impl<'a> Method<'a> {
 
             let mut pairs = node.into_inner();
             let ident = pairs.next().unwrap().as_str();
-            let t = crate::compiler::parse_type(pairs.next().unwrap().as_str());
-            let is_array = pairs.next().is_some();
+            let t = Type::new(pairs.next().unwrap().as_str().parse().unwrap(), pairs.next().is_some());
 
-            params.push((ident, if is_array { format!("[{}", t) } else { t.to_string() }));
+            params.push((ident, t));
         };
 
         let (ret_type, block) =
-            if next.as_rule() == Rule::block { ("V", next) }
-            else {
-                (crate::compiler::parse_type(next.as_str()), pairs.next().unwrap())
-            };
+            if next.as_rule() == Rule::block { (Type::new(super::t::TypeId::Void, false), next) }
+            else { (Type::new(next.as_str().parse().unwrap(), false), pairs.next().unwrap()) };
 
-        let mut map = HashMap::new();
-        for (ident, t) in &params {
-            map.insert(ident.to_string(), (t.to_string(), map.len() as u16));
+        let mut arg_map = HashMap::new();
+        let mut arg_lst = vec![];
+        for (ident, t) in params {
+            arg_map.insert(ident.to_string(), (t.clone(), arg_map.len() as u8));
+            arg_lst.push(t);
         }
+        
+        let descriptor = Descriptor::new(arg_lst, ret_type);
 
         Self {
             name: ident,
-            descriptor: format!("({}){}", params.into_iter().map(|(_, b)| b).collect::<Vec<_>>().join(""), ret_type),
-            args: map,
+            descriptor,
+            args: arg_map,
             code: block,
         }
     }
@@ -98,23 +100,23 @@ impl<'a> Method<'a> {
                         f => {
                             code.put_u8(184); // invokestatic
                             let method = class.methods.get(f).unwrap();
-                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, class.this_class.clone(), f.to_string(), method.descriptor.clone()));
+                            code.put_u16(cp.insert_ref(crate::compiler::constant_pool::Ref::Method, class.this_class.clone(), f.to_string(), method.descriptor.to_string()));
                         },
                     }
                 },
                 Rule::varDecl => {
                     let mut pairs = pair.into_inner();
                     let ident = pairs.next().unwrap().as_str();
-                    let t = pairs.next().unwrap().as_str();
+                    let t = Type::new(pairs.next().unwrap().as_str().parse().unwrap(), false);
                     let v = pairs.next().unwrap().into_inner().as_str();
 
-                    let store_idx = (self.args.len() + vars.len()) as u16;
+                    let store_idx = (self.args.len() + vars.len()) as u8;
 
                     code.put_u8(18); // ldc
                     code.put_u8(cp.insert_string(v.to_string()) as u8);
                     code.put_u8(75 + store_idx as u8); // astore_n
 
-                    vars.insert(ident, (t.to_string(), store_idx));
+                    vars.insert(ident, (t, store_idx));
                 },
                 _ => {
                     println!("{pair:?}");
@@ -144,7 +146,7 @@ impl<'a> Method<'a> {
         let mut buf = bytes::BytesMut::new();
         buf.put_u16(1 | 8);
         buf.put_u16(cp.insert_utf8(self.name.to_string()));
-        buf.put_u16(cp.insert_utf8(self.descriptor.clone()));
+        buf.put_u16(cp.insert_utf8(self.descriptor.to_string()));
 
         buf.put_u16(1);
         buf.put_slice(&compiled_code);
