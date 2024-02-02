@@ -83,11 +83,11 @@ impl<'a> Method<'a> {
                     for arg in pairs {
                         match arg.as_rule() {
                             Rule::ident => {
-                                let arg = arg.as_str();
+                                let arg_v = arg.as_str();
                                 let (t, idx) = (
-                                    if let Some(v) = self.args.get(arg) { Ok(v) }
-                                    else if let Some(v) = vars.get(arg) { Ok(v) }
-                                    else { Err(super::CompileError::SymbolNotFound(arg.to_string())) }
+                                    if let Some(v) = self.args.get(arg_v) { Ok(v) }
+                                    else if let Some(v) = vars.get(arg_v) { Ok(v) }
+                                    else { Err(super::CompileError::new(super::CompileErrorId::SymbolNotFound(arg_v.to_string()), arg.line_col())) }
                                 )?;
                                 descriptor.args.push(t.clone());
                                 match t.id {

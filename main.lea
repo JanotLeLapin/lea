@@ -15,5 +15,5 @@ fn main(args: String[]) {
   let c: bool = true;
 
   print(a);
-  print(c);
+  print(d);
 }

@@ -3,6 +3,9 @@ pub mod method;
 pub mod structure;
 pub mod t;
 
+pub mod error;
+pub use error::{CompileErrorId, CompileError, Result};
+
 use std::collections::HashMap;
 
 use crate::Rule;
@@ -78,17 +81,9 @@ impl<'a> ClassFile<'a> {
     }
 }
 
-#[derive(Debug)]
-pub enum CompileError {
-    ExpectedModule,
-    SymbolNotFound(String),
-}
-
-pub type Result<T> = std::result::Result<T, CompileError>;
-
 pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>> {
     let module = ast.next().unwrap();
-    if module.as_rule() != Rule::module { return Err(CompileError::ExpectedModule) }
+    if module.as_rule() != Rule::module { return Err(CompileError::new(CompileErrorId::ExpectedModule, module.line_col())) }
 
     let mut class = ClassFile::new(
         0xCAFEBABE,
