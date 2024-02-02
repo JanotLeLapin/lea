@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 #[derive(Debug)]
 pub enum CompileErrorId {
     SymbolNotFound(String),
@@ -17,26 +19,28 @@ impl CompileError {
     pub fn print(&self, fileame: &str, source: &str) {
         use CompileErrorId::*;
 
-        println!("{fileame} --> {}:{}", self.start.0, self.start.1);
-        println!("|");
+        let bar = "|".blue();
+
+        println!("{fileame} {} {}:{}", "-->".blue(), self.start.0, self.start.1);
+        println!("{bar}");
 
         let line = source.split("\n").collect::<Vec<_>>()[self.start.0-1];
         let offset = line.char_indices().find_map(|(i, c)| if c == ' ' { None } else { Some(i) }).unwrap_or(0);
 
         let line = &line[offset..];
 
-        println!("| {line}");
+        println!("{bar} {line}");
 
         let mut arrow = String::new();
         for _ in 0..self.start.1-1-offset { arrow.push(' '); }
         arrow.push('^');
-        println!("| {arrow}");
+        println!("{bar} {}", arrow.red());
 
         let msg = match &self.id {
-            SymbolNotFound(symbol) => format!("= symbol not found: {}", symbol),
+            SymbolNotFound(symbol) => format!("symbol not found: {}", symbol),
         };
 
-        println!("{msg}");
+        println!("{} {}: {msg}", "=".blue(), "error".red());
     }
 }
 

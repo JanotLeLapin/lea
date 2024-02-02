@@ -8,3 +8,5 @@ pest = "2.7"
 pest_derive = "2.7"
 
 bytes = "1.5"
+
+colored = "2.1"
