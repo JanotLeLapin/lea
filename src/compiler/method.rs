@@ -123,8 +123,33 @@ impl<'a> Method<'a> {
                 Rule::varDecl => {
                     let mut pairs = pair.into_inner();
                     let ident = pairs.next().unwrap().as_str();
-                    let t = Type::new(pairs.next().unwrap().as_str().parse().unwrap(), false);
+                    let t = {
+                        let pair = pairs.peek().unwrap();
+                        match pair.as_rule() {
+                            Rule::primitive | Rule::object => {
+                                let t_id = pairs.next().unwrap().as_str().parse().unwrap();
+                                let is_array = match pairs.peek().unwrap().as_rule() {
+                                    Rule::array => {
+                                        pairs.next();
+                                        true
+                                    },
+                                    _ => false,
+                                };
+
+                                Some(Type::new(t_id, is_array))
+                            }
+                            _ => None,
+                        }
+                    };
                     let v = pairs.next().unwrap();
+
+                    let t = t.unwrap_or_else(|| match v.as_rule() {
+                        Rule::numLit => Type::new(TypeId::I32, false),
+                        Rule::strLit => Type::new(TypeId::Other("String".to_string()), false),
+                        Rule::charLit => Type::new(TypeId::Char, false),
+                        Rule::boolLit => Type::new(TypeId::Bool, false),
+                        r => { unimplemented!("{r:?}") },
+                    });
 
                     let store_idx = (self.args.len() + vars.len()) as u8;
 

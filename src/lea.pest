@@ -15,7 +15,7 @@ params = _{ "(" ~ (param ~ ("," ~ param)*)? ~ ")" }
 block = { "{" ~ (stmt*)? ~ "}" }
 
 stmt = _{ (expr | varDecl | returnStmt) ~ ";" }
-varDecl = { "let" ~ ident ~ ":" ~ type ~ "=" ~ (lit | ident) }
+varDecl = { "let" ~ ident ~ (":" ~ type)? ~ "=" ~ (lit | ident) }
 returnStmt = { "return" ~ (ident | lit)? }
 
 expr = _{ callExpr }
@@ -23,7 +23,7 @@ callExpr = { ident ~ "(" ~ (arg ~ ("," ~ arg)*)? ~ ")" }
 
 arg = _{ (ident | lit) }
 
-lit = _{ numLit | strLit | charLit }
+lit = _{ numLit | strLit | charLit | boolLit }
 numLit = { (ASCII_DIGIT | ".")+ }
 strLit = ${ "\"" ~ inner ~ "\"" }
 charLit = { "'" ~ char ~ "'" }
@@ -36,7 +36,7 @@ char = {
 }
 inner = @{ char* }
 
-ident = { (ASCII_ALPHANUMERIC | "_")+ }
+ident = @{ (ASCII_ALPHANUMERIC | "_")+ }
 
 primitive = { "i8" | "i16" | "i32" | "i64" | "char" | "bool" }
 object = { (ASCII_ALPHANUMERIC)+ }

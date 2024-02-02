@@ -11,8 +11,8 @@ fn my_print(first: String, second: i32) {
 }
 
 fn main(args: String[]) {
-  let a: String = "Hello";
-  let c: bool = true;
+  let a = "Hello";
+  let c = true;
 
   print(a);
   print(c);
