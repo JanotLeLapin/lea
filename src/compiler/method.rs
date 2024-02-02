@@ -51,6 +51,8 @@ impl<'a> Method<'a> {
     }
 
     pub fn compile_code(&self, class: &crate::compiler::ClassFile<'a>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> super::Result<Vec<u8>> {
+        let mut errs = vec![];
+
         let mut vars = HashMap::new();
 
         let pairs = self.code.clone().into_inner();
@@ -84,11 +86,13 @@ impl<'a> Method<'a> {
                         match arg.as_rule() {
                             Rule::ident => {
                                 let arg_v = arg.as_str();
-                                let (t, idx) = (
-                                    if let Some(v) = self.args.get(arg_v) { Ok(v) }
-                                    else if let Some(v) = vars.get(arg_v) { Ok(v) }
-                                    else { Err(super::CompileError::new(super::CompileErrorId::SymbolNotFound(arg_v.to_string()), arg.line_col())) }
-                                )?;
+                                let (t, idx) =
+                                    if let Some(v) = self.args.get(arg_v) { v }
+                                    else if let Some(v) = vars.get(arg_v) { v }
+                                    else {
+                                        errs.push(super::CompileError::new(super::CompileErrorId::SymbolNotFound(arg_v.to_string()), arg.line_col()));
+                                        continue;
+                                    };
                                 descriptor.args.push(t.clone());
                                 match t.id {
                                     TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool
@@ -174,7 +178,8 @@ impl<'a> Method<'a> {
         buf.put_u32(body.len() as u32);
         buf.put_slice(&body);
 
-        Ok(buf.to_vec())
+        if errs.len() == 0 { Ok(buf.to_vec()) }
+        else { Err(errs) }
     }
 
     pub fn compile(&self, cp: &mut crate::compiler::constant_pool::ConstantPool, compiled_code: Vec<u8>) -> Vec<u8> {

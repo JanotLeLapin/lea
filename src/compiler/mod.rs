@@ -49,6 +49,8 @@ impl<'a> ClassFile<'a> {
     }
 
     pub fn compile(&mut self, ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>> {
+        let mut errs = vec![];
+
         let mut cp = constant_pool::ConstantPool::new();
 
         for node in ast {
@@ -77,8 +79,10 @@ impl<'a> ClassFile<'a> {
 
         body.put_u16(self.methods.len() as u16);
         for (_, method) in &self.methods {
-            let compiled_code = method.compile_code(&self, &mut cp);
-            body.put_slice(&method.compile(&mut cp, compiled_code?));
+            match method.compile_code(&self, &mut cp) {
+                Ok(compiled) => body.put_slice(&method.compile(&mut cp, compiled)),
+                Err(mut e) => errs.append(&mut e),
+            }
         }
 
         body.put_u16(0);
@@ -92,6 +96,7 @@ impl<'a> ClassFile<'a> {
         buf.put_slice(&cp.serialize());
         buf.put_slice(&body);
 
-        Ok(buf.to_vec())
+        if errs.len() == 0 { Ok(buf.to_vec()) }
+        else { Err(errs) }
     }
 }

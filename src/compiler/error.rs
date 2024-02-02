@@ -1,6 +1,5 @@
 #[derive(Debug)]
 pub enum CompileErrorId {
-    ExpectedModule,
     SymbolNotFound(String),
 }
 
@@ -34,7 +33,6 @@ impl CompileError {
         println!("| {arrow}");
 
         let msg = match &self.id {
-            ExpectedModule => "= expected module declaration at the top of the file".to_string(),
             SymbolNotFound(symbol) => format!("= symbol not found: {}", symbol),
         };
 
@@ -42,4 +40,4 @@ impl CompileError {
     }
 }
 
-pub type Result<T> = std::result::Result<T, CompileError>;
+pub type Result<T> = std::result::Result<T, Vec<CompileError>>;

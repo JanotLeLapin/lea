@@ -22,16 +22,14 @@ fn main() {
                 0xCAFEBABE,
                 compiler::Version::new(0, 52),
                 1 | 32,
-                this.to_string(), "Ljava/lang/Object;".to_string(),
+                this.to_string(), "java/lang/Object".to_string(),
             );
-            let data = match class.compile(&mut pairs) {
-                Ok(v) => v,
-                Err(e) => {
-                    e.print(&file, &src);
-                    return;
-                },
+            match class.compile(&mut pairs) {
+                Ok(data) => std::fs::write(format!("{}.class", this), data).unwrap(),
+                Err(errs) => for err in errs {
+                    err.print(&file, &src);
+                }
             };
-            std::fs::write(format!("{}.class", this), data).unwrap();
         }
     }
 }
