@@ -24,12 +24,15 @@ fn main() {
                 1 | 32,
                 this.to_string(), "java/lang/Object".to_string(),
             );
+
+            let now = std::time::Instant::now();
             match class.compile(&mut pairs) {
                 Ok(data) => std::fs::write(format!("{}.class", this), data).unwrap(),
                 Err(errs) => for err in errs {
                     err.print(&file, &src);
                 }
             };
+            println!("done ({:?})", now.elapsed());
         }
     }
 }
