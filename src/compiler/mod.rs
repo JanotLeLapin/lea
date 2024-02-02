@@ -48,13 +48,28 @@ impl<'a> ClassFile<'a> {
         }
     }
 
-    pub fn serialize(&mut self) -> Result<Vec<u8>> {
+    pub fn compile(&mut self, ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<Vec<u8>> {
         let mut cp = constant_pool::ConstantPool::new();
+
+        for node in ast {
+            match node.as_rule() {
+                Rule::functionDecl => {
+                    let method = self::method::Method::parse(&mut node.into_inner());
+                    self.methods.insert(method.name.to_string(), method);
+                },
+                Rule::structDecl => {
+                    let structure = self::structure::Structure::parse(&mut node.into_inner());
+                    self.structures.insert(structure.name.to_string(), structure);
+                }
+                _ => {
+                },
+            }
+        }
 
         let mut body = bytes::BytesMut::new();
         body.put_u16(self.access_flags);
-        body.put_u16(cp.insert_class(self.this_class.clone()));
-        body.put_u16(cp.insert_class(self.super_class.clone()));
+        body.put_u16(cp.insert_class(self.this_class.to_string()));
+        body.put_u16(cp.insert_class(self.super_class.to_string()));
 
         body.put_u16(0);
 
@@ -79,34 +94,4 @@ impl<'a> ClassFile<'a> {
 
         Ok(buf.to_vec())
     }
-}
-
-pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>> {
-    let module = ast.next().unwrap();
-    if module.as_rule() != Rule::module { return Err(CompileError::new(CompileErrorId::ExpectedModule, module.line_col())) }
-
-    let mut class = ClassFile::new(
-        0xCAFEBABE,
-        Version::new(0, 52),
-        1 | 32,
-        module.into_inner().next().unwrap().as_str().to_string(),
-        "java/lang/Object".to_string()
-    );
-
-    for node in ast {
-        match node.as_rule() {
-            Rule::functionDecl => {
-                let method = self::method::Method::parse(&mut node.into_inner());
-                class.methods.insert(method.name.to_string(), method);
-            },
-            Rule::structDecl => {
-                let structure = self::structure::Structure::parse(&mut node.into_inner());
-                class.structures.insert(structure.name.to_string(), structure);
-            }
-            _ => {
-            },
-        }
-    }
-
-    Ok(class)
 }

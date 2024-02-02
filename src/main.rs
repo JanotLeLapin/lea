@@ -16,14 +16,22 @@ fn main() {
         Err(e) => println!("{e}"),
         Ok(mut parsed) => {
             let mut pairs = parsed.next().unwrap().into_inner();
-            let (class, data) = match compiler::compile(&mut pairs).and_then(|mut class| class.serialize().map(|data| (class, data))) {
+            let this = pairs.next().unwrap().into_inner().as_str();
+
+            let mut class = compiler::ClassFile::new(
+                0xCAFEBABE,
+                compiler::Version::new(0, 52),
+                1 | 32,
+                this.to_string(), "Ljava/lang/Object;".to_string(),
+            );
+            let data = match class.compile(&mut pairs) {
                 Ok(v) => v,
                 Err(e) => {
                     e.print(&file, &src);
                     return;
                 },
             };
-            std::fs::write(format!("{}.class", class.this_class), &data).unwrap();
+            std::fs::write(format!("{}.class", this), data).unwrap();
         }
     }
 }
