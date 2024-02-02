@@ -50,7 +50,7 @@ impl<'a> Method<'a> {
         }
     }
 
-    pub fn compile_code(&self, class: &crate::compiler::ClassFile<'a>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> Vec<u8> {
+    pub fn compile_code(&self, class: &crate::compiler::ClassFile<'a>, cp: &mut crate::compiler::constant_pool::ConstantPool) -> super::Result<Vec<u8>> {
         let mut vars = HashMap::new();
 
         let pairs = self.code.clone().into_inner();
@@ -83,7 +83,12 @@ impl<'a> Method<'a> {
                     for arg in pairs {
                         match arg.as_rule() {
                             Rule::ident => {
-                                let (t, idx) = self.args.get(arg.as_str()).unwrap_or_else(|| vars.get(arg.as_str()).unwrap());
+                                let arg = arg.as_str();
+                                let (t, idx) = (
+                                    if let Some(v) = self.args.get(arg) { Ok(v) }
+                                    else if let Some(v) = vars.get(arg) { Ok(v) }
+                                    else { Err(super::CompileError::SymbolNotFound(arg.to_string())) }
+                                )?;
                                 descriptor.args.push(t.clone());
                                 match t.id {
                                     TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool
@@ -169,7 +174,7 @@ impl<'a> Method<'a> {
         buf.put_u32(body.len() as u32);
         buf.put_slice(&body);
 
-        buf.to_vec()
+        Ok(buf.to_vec())
     }
 
     pub fn compile(&self, cp: &mut crate::compiler::constant_pool::ConstantPool, compiled_code: Vec<u8>) -> Vec<u8> {

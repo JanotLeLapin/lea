@@ -45,7 +45,7 @@ impl<'a> ClassFile<'a> {
         }
     }
 
-    pub fn serialize(&mut self) -> Vec<u8> {
+    pub fn serialize(&mut self) -> Result<Vec<u8>> {
         let mut cp = constant_pool::ConstantPool::new();
 
         let mut body = bytes::BytesMut::new();
@@ -60,7 +60,7 @@ impl<'a> ClassFile<'a> {
         body.put_u16(self.methods.len() as u16);
         for (_, method) in &self.methods {
             let compiled_code = method.compile_code(&self, &mut cp);
-            body.put_slice(&method.compile(&mut cp, compiled_code));
+            body.put_slice(&method.compile(&mut cp, compiled_code?));
         }
 
         body.put_u16(0);
@@ -74,16 +74,19 @@ impl<'a> ClassFile<'a> {
         buf.put_slice(&cp.serialize());
         buf.put_slice(&body);
 
-        buf.to_vec()
+        Ok(buf.to_vec())
     }
 }
 
 #[derive(Debug)]
 pub enum CompileError {
     ExpectedModule,
+    SymbolNotFound(String),
 }
 
-pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>, CompileError> {
+pub type Result<T> = std::result::Result<T, CompileError>;
+
+pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFile<'a>> {
     let module = ast.next().unwrap();
     if module.as_rule() != Rule::module { return Err(CompileError::ExpectedModule) }
 
