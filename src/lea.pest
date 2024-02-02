@@ -1,10 +1,12 @@
 source = {
   SOI ~
-  (module | functionDecl)* ~
+  (module | structDecl | functionDecl)* ~
   EOI
 }
 
 module = { "module" ~ ident ~ ";" }
+structMember = { ident ~ ":" ~ type }
+structDecl = { "struct" ~ ident ~ "{" ~ (structMember ~ ("," ~ structMember)*)? ~ ","? ~ "}" }
 functionDecl = { "fn" ~ ident ~ params ~ ("->" ~ type)? ~ block }
 
 param = { ident ~ ":" ~ type }

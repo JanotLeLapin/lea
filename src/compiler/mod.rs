@@ -1,5 +1,6 @@
 pub mod constant_pool;
 pub mod method;
+pub mod structure;
 pub mod t;
 
 use std::collections::HashMap;
@@ -28,6 +29,7 @@ pub struct ClassFile<'a> {
     pub this_class: String,
     super_class: String,
     methods: HashMap<String, method::Method<'a>>,
+    structures: HashMap<String, structure::Structure<'a>>,
 }
 
 impl<'a> ClassFile<'a> {
@@ -39,6 +41,7 @@ impl<'a> ClassFile<'a> {
             this_class,
             super_class,
             methods: HashMap::new(),
+            structures: HashMap::new(),
         }
     }
 
@@ -98,7 +101,12 @@ pub fn compile<'a>(ast: &mut pest::iterators::Pairs<'a, Rule>) -> Result<ClassFi
                 let method = self::method::Method::parse(&mut node.into_inner());
                 class.methods.insert(method.name.to_string(), method);
             },
-            _ => {},
+            Rule::structDecl => {
+                let structure = self::structure::Structure::parse(&mut node.into_inner());
+                class.structures.insert(structure.name.to_string(), structure);
+            }
+            _ => {
+            },
         }
     }
 
