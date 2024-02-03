@@ -1,0 +1,13 @@
+module Tests;
+
+fn basic_return() -> String {
+  return "bar";
+}
+
+fn complex_return() -> String {
+  let a = "foo";
+  let b = "bar";
+  let c = "baz";
+
+  return c;
+}

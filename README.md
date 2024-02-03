@@ -26,3 +26,7 @@ Compile and run your program:
 ./target/release/leac myleafile.lea
 java Main # prints: Hello, World!
 ```
+
+## Tests
+
+If you have Nix installed on your system, you may run the [unit tests](./test) with `nix run .#tests`.
