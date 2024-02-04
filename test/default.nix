@@ -1,7 +1,7 @@
 { fetchurl
 , stdenv
 , leac
-, jdk8
+, jdk
 }: let
   junit = fetchurl {
     url = "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar";
@@ -15,8 +15,8 @@ in stdenv.mkDerivation {
   pname = "lea-test";
   version = "0.1";
 
-  buildInputs = [ leac jdk8 ];
-  src = ./test;
+  buildInputs = [ leac jdk ];
+  src = ./.;
 
   buildPhase = ''
     leac tests.lea
@@ -29,7 +29,7 @@ in stdenv.mkDerivation {
   installPhase = ''
     mkdir -p $out/bin
     cp Main.class Tests.class junit.jar hamcrest.jar $out/bin
-    echo "java -cp \"$out/bin:$out/bin/junit.jar:$out/bin/hamcrest.jar\" org.junit.runner.JUnitCore Main" > $out/bin/lea-test
+    echo "${jdk}/bin/java -cp \"$out/bin:$out/bin/junit.jar:$out/bin/hamcrest.jar\" org.junit.runner.JUnitCore Main" > $out/bin/lea-test
     chmod +x $out/bin/lea-test
   '';
 }

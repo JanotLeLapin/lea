@@ -20,7 +20,7 @@
     devShells = eachSystem ({ pkgs, ... }: { default = pkgs.callPackage ./shell.nix {}; });
     packages = eachSystem ({ pkgs, ... }: rec {
       default = pkgs.callPackage ./default.nix {};
-      test = pkgs.callPackage ./test.nix { leac = default; };
+      test = pkgs.callPackage ./test/default.nix { leac = default; };
     });
   };
 }
