@@ -21,7 +21,7 @@ returnStmt = { "return" ~ (lit | ident)? }
 expr = _{ callExpr }
 callExpr = { ident ~ "(" ~ (value ~ ("," ~ value)*)? ~ ")" }
 
-value = _{ (callExpr | ident | lit) }
+value = _{ (callExpr | lit | ident) }
 
 lit = _{ numLit | strLit | charLit | boolLit }
 numLit = { (ASCII_DIGIT | ".")+ }

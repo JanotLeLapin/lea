@@ -170,8 +170,30 @@ impl<'a> MethodCompiler<'a> {
                 let ident = pairs.next().unwrap();
                 let method = class.methods.get(ident.as_str()).unwrap();
 
+                let mut args = vec![];
+                let expected_arg_cnt = method.descriptor.args.len();
                 for arg in pairs {
-                    self.compile_value(arg, &class).unwrap();
+                    let arg_loc = arg.line_col();
+
+                    if args.len() >= expected_arg_cnt {
+                        self.errs.push(super::CompileError::new(super::CompileErrorId::UnexpectedArgCount(expected_arg_cnt as u16), arg_loc));
+                        break;
+                    }
+
+                    match self.compile_value(arg, &class) {
+                        Ok(t) => {
+                            let arg_t = &method.descriptor.args[args.len()];
+                            if t == *arg_t { args.push(t); }
+                            else {
+                                self.errs.push(super::CompileError::new(super::CompileErrorId::UnexpectedArgType(arg_t.to_string(), t.to_string()), arg_loc));
+                                break;
+                            }
+                        },
+                        Err(e) => {
+                            self.errs.push(e);
+                            break;
+                        }
+                    };
                 }
 
                 self.b.put_u8(184); // invokestatic

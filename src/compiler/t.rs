@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeId {
     I8, I16, I32, I64,
     Char, Bool,
@@ -24,7 +24,7 @@ impl std::str::FromStr for TypeId {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Type {
     pub id: TypeId,
     array: bool,

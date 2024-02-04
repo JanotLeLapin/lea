@@ -3,6 +3,8 @@ use colored::Colorize;
 #[derive(Debug)]
 pub enum CompileErrorId {
     SymbolNotFound(String),
+    UnexpectedArgCount(u16),
+    UnexpectedArgType(String, String),
 }
 
 #[derive(Debug)]
@@ -38,6 +40,8 @@ impl CompileError {
 
         let msg = match &self.id {
             SymbolNotFound(symbol) => format!("symbol not found: {}", symbol),
+            UnexpectedArgCount(expected) => format!("unexpected argument: expected {} arguments", expected),
+            UnexpectedArgType(expected, got) => format!("unexpected argument: expected a {}, got a {}", expected, got),
         };
 
         println!("{} {}: {msg}", "=".blue(), "error".red());
