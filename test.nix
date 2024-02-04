@@ -1,7 +1,7 @@
 { fetchurl
 , stdenv
 , leac
-, jdk
+, jdk8
 }: let
   junit = fetchurl {
     url = "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar";
@@ -15,7 +15,7 @@ in stdenv.mkDerivation {
   pname = "lea-test";
   version = "0.1";
 
-  buildInputs = [ leac jdk ];
+  buildInputs = [ leac jdk8 ];
   src = ./test;
 
   buildPhase = ''
