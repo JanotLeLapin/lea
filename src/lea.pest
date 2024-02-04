@@ -15,13 +15,13 @@ params = _{ "(" ~ (param ~ ("," ~ param)*)? ~ ")" }
 block = { "{" ~ (stmt*)? ~ "}" }
 
 stmt = _{ (expr | varDecl | returnStmt) ~ ";" }
-varDecl = { "let" ~ ident ~ (":" ~ type)? ~ "=" ~ (lit | ident) }
+varDecl = { "let" ~ ident ~ (":" ~ type)? ~ "=" ~ value }
 returnStmt = { "return" ~ (lit | ident)? }
 
 expr = _{ callExpr }
-callExpr = { ident ~ "(" ~ (arg ~ ("," ~ arg)*)? ~ ")" }
+callExpr = { ident ~ "(" ~ (value ~ ("," ~ value)*)? ~ ")" }
 
-arg = _{ (ident | lit) }
+value = _{ (callExpr | ident | lit) }
 
 lit = _{ numLit | strLit | charLit | boolLit }
 numLit = { (ASCII_DIGIT | ".")+ }

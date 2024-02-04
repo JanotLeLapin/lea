@@ -1,15 +1,5 @@
 module Main;
 
-fn my_print(first: String, second: i32) {
-  print(first);
-  print(second);
-}
-
 fn main(args: String[]) {
-  let a = "Hello";
-  let c = true;
-
-  print(a);
-  print(c);
   print("foo");
 }
