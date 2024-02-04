@@ -37,8 +37,10 @@ impl<'a> MethodCompiler<'a> {
         for pair in pairs {
             match pair.as_rule() {
                 Rule::returnStmt => {
-                    let _ = self.compile_value(pair.into_inner().next().unwrap());
-                    self.b.put_u8(176); // areturn
+                    match self.compile_value(pair.into_inner().next().unwrap()).unwrap().id {
+                        TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::I64 | TypeId::Char | TypeId::Bool => self.b.put_u8(172), // ireturn
+                        _ => self.b.put_u8(176), // areturn
+                    };
                     returned = true;
                 },
                 Rule::callExpr => self.compile_call_expr(pair, class),
@@ -190,18 +192,32 @@ impl<'a> MethodCompiler<'a> {
                 t.clone()
             },
             r => {
-                let t = match r {
-                    Rule::numLit => Type::new(TypeId::I32, false),
-                    Rule::strLit => Type::new(TypeId::Other("String".to_string()), false),
-                    Rule::charLit => Type::new(TypeId::Char, false),
-                    Rule::boolLit => Type::new(TypeId::Bool, false),
+                match r {
+                    Rule::numLit => {
+                        self.b.put_u8(16); // bipush
+                        self.b.put_u8(arg.as_str().parse().unwrap());
+                        Type::new(TypeId::I32, false)
+                    },
+                    Rule::strLit => {
+                        self.b.put_u8(18); // ldc
+                        self.b.put_u8(self.cp.insert_string(arg.into_inner().next().unwrap().as_str().to_string()) as u8);
+                        Type::new(TypeId::Other("String".to_string()), false)
+                    },
+                    Rule::charLit => {
+                        self.b.put_u16(16); // bipush
+                        self.b.put_u8(arg.as_str().chars().skip(1).next().unwrap() as u32 as u8);
+                        Type::new(TypeId::Char, false)
+                    }
+                    Rule::boolLit => {
+                        self.b.put_u16(16); // bipush
+                        self.b.put_u8(match arg.as_str() {
+                            "true" => 1,
+                            _ => 0,
+                        });
+                        Type::new(TypeId::Bool, false)
+                    },
                     _ => { unimplemented!("{r:?}") }
-                };
-
-                self.b.put_u8(18); // ldc
-                self.b.put_u8(self.cp.insert_string(arg.into_inner().next().unwrap().as_str().to_string()) as u8);
-
-                t
+                }
             }
         })
     }

@@ -16,7 +16,7 @@ block = { "{" ~ (stmt*)? ~ "}" }
 
 stmt = _{ (expr | varDecl | returnStmt) ~ ";" }
 varDecl = { "let" ~ ident ~ (":" ~ type)? ~ "=" ~ (lit | ident) }
-returnStmt = { "return" ~ (ident | lit)? }
+returnStmt = { "return" ~ (lit | ident)? }
 
 expr = _{ callExpr }
 callExpr = { ident ~ "(" ~ (arg ~ ("," ~ arg)*)? ~ ")" }
