@@ -79,10 +79,9 @@ impl<'a> ClassFile<'a> {
 
         body.put_u16(self.methods.len() as u16);
         for (_, method) in &self.methods {
-            match method.compile_code(&self, &mut cp) {
-                Ok(compiled) => body.put_slice(&method.compile(&mut cp, compiled)),
-                Err(mut e) => errs.append(&mut e),
-            }
+            let mut ctx = method::MethodCompiler::new(&mut cp, method);
+            body.put_slice(&ctx.compile(method.code.clone(), &self));
+            errs.append(&mut ctx.errs);
         }
 
         body.put_u16(0);

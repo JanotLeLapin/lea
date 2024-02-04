@@ -1,10 +1,5 @@
 module Main;
 
-struct User {
-  name: String,
-  age: i32,
-}
-
 fn my_print(first: String, second: i32) {
   print(first);
   print(second);
@@ -16,4 +11,5 @@ fn main(args: String[]) {
 
   print(a);
   print(c);
+  print("foo");
 }

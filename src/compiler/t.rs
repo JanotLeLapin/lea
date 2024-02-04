@@ -60,7 +60,7 @@ impl ToString for Type {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Descriptor {
     pub args: Vec<Type>,
     return_type: Type,
