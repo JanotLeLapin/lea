@@ -37,8 +37,7 @@ impl<'a> MethodCompiler<'a> {
         for pair in pairs {
             match pair.as_rule() {
                 Rule::returnStmt => {
-                    self.b.put_u8(18); // ldc
-                    self.b.put_u8(self.cp.insert_string(pair.into_inner().as_str().to_string()) as u8);
+                    let _ = self.compile_value(pair.into_inner().next().unwrap());
                     self.b.put_u8(176); // areturn
                     returned = true;
                 },
@@ -162,40 +161,49 @@ impl<'a> MethodCompiler<'a> {
     pub fn compile_args(&mut self, pairs: Pairs<'a, Rule>) -> Descriptor {
         let mut descriptor = Descriptor::new(Vec::new(), Type::new(super::t::TypeId::Void, false));
         for arg in pairs {
-            match arg.as_rule() {
-                Rule::ident => {
-                    let arg_v = arg.as_str();
-                    let (t, idx) =
-                        if let Some(v) = self.args.get(arg_v) { v }
-                        else if let Some(v) = self.vars.get(arg_v) { v }
-                        else {
-                            self.errs.push(super::CompileError::new(super::CompileErrorId::SymbolNotFound(arg_v.to_string()), arg.line_col()));
-                            continue;
-                        };
-                    descriptor.args.push(t.clone());
-                    match t.id {
-                        TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool
-                            => self.b.put_u8(26 + *idx), // iload_n
-                        TypeId::Other(_) => self.b.put_u8(42 + *idx), // aload_n
-                        _ => {},
-                    }
-                },
-                r => {
-                    descriptor.args.push(match r {
-                        Rule::numLit => Type::new(TypeId::I32, false),
-                        Rule::strLit => Type::new(TypeId::Other("String".to_string()), false),
-                        Rule::charLit => Type::new(TypeId::Char, false),
-                        Rule::boolLit => Type::new(TypeId::Bool, false),
-                        _ => { unimplemented!("{r:?}") }
-                    });
-
-                    self.b.put_u8(18); // ldc
-                    self.b.put_u8(self.cp.insert_string(arg.into_inner().next().unwrap().as_str().to_string()) as u8);
-                }
+            match self.compile_value(arg) {
+                Ok(t) => descriptor.args.push(t),
+                Err(e) => self.errs.push(e),
             }
         }
 
         descriptor
+    }
+
+    pub fn compile_value(&mut self, arg: Pair<'a, Rule>) -> Result<Type, super::CompileError> {
+        Ok(match arg.as_rule() {
+            Rule::ident => {
+                let arg_v = arg.as_str();
+                let (t, idx) =
+                    if let Some(v) = self.args.get(arg_v) { v }
+                    else if let Some(v) = self.vars.get(arg_v) { v }
+                    else {
+                        return Err(super::CompileError::new(super::CompileErrorId::SymbolNotFound(arg_v.to_string()), arg.line_col()));
+                    };
+                match t.id {
+                    TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool
+                        => self.b.put_u8(26 + *idx), // iload_n
+                    TypeId::Other(_) => self.b.put_u8(42 + *idx), // aload_n
+                    _ => {},
+                };
+
+                t.clone()
+            },
+            r => {
+                let t = match r {
+                    Rule::numLit => Type::new(TypeId::I32, false),
+                    Rule::strLit => Type::new(TypeId::Other("String".to_string()), false),
+                    Rule::charLit => Type::new(TypeId::Char, false),
+                    Rule::boolLit => Type::new(TypeId::Bool, false),
+                    _ => { unimplemented!("{r:?}") }
+                };
+
+                self.b.put_u8(18); // ldc
+                self.b.put_u8(self.cp.insert_string(arg.into_inner().next().unwrap().as_str().to_string()) as u8);
+
+                t
+            }
+        })
     }
 }
 
