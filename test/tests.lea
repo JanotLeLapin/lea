@@ -11,3 +11,6 @@ fn complex_return() -> String {
 
   return c;
 }
+
+fn num_return() -> i32 { return 5; }
+fn bool_return() -> bool { return false; }
