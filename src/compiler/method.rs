@@ -44,68 +44,7 @@ impl<'a> MethodCompiler<'a> {
                     returned = true;
                 },
                 Rule::callExpr => self.compile_call_expr(pair, class),
-                Rule::varDecl => {
-                    let mut pairs = pair.into_inner();
-                    let ident = pairs.next().unwrap().as_str();
-                    let t = {
-                        let pair = pairs.peek().unwrap();
-                        match pair.as_rule() {
-                            Rule::primitive | Rule::object => {
-                                let t_id = pairs.next().unwrap().as_str().parse().unwrap();
-                                let is_array = match pairs.peek().unwrap().as_rule() {
-                                    Rule::array => {
-                                        pairs.next();
-                                        true
-                                    },
-                                    _ => false,
-                                };
-
-                                Some(Type::new(t_id, is_array))
-                            }
-                            _ => None,
-                        }
-                    };
-                    let v = pairs.next().unwrap();
-
-                    let t = t.unwrap_or_else(|| match v.as_rule() {
-                        Rule::numLit => Type::new(TypeId::I32, false),
-                        Rule::strLit => Type::new(TypeId::Other("String".to_string()), false),
-                        Rule::charLit => Type::new(TypeId::Char, false),
-                        Rule::boolLit => Type::new(TypeId::Bool, false),
-                        r => { unimplemented!("{r:?}") },
-                    });
-
-                    let store_idx = (self.args.len() + self.vars.len()) as u8;
-
-                    match t.id {
-                        TypeId::I8 | TypeId::I16 | TypeId::I32 => {
-                            self.b.put_u8(16); // bipush
-                            self.b.put_u8(v.as_str().parse().unwrap());
-                            self.b.put_u8(59 + store_idx as u8); // istore_n
-                        },
-                        TypeId::Char => {
-                            self.b.put_u16(16); // bipush
-                            self.b.put_u8(v.as_str().chars().skip(1).next().unwrap() as u32 as u8);
-                            self.b.put_u8(59 + store_idx as u8) // istore_n
-                        },
-                        TypeId::Bool => {
-                            self.b.put_u16(16); // bipush
-                            self.b.put_u8(match v.as_str() {
-                                "true" => 1,
-                                _ => 0,
-                            });
-                            self.b.put_u8(59 + store_idx as u8) // istore_n
-                        }
-                        TypeId::Other(_) => {
-                            self.b.put_u8(18); // ldc
-                            self.b.put_u8(self.cp.insert_string(v.into_inner().as_str().to_string()) as u8);
-                            self.b.put_u8(75 + store_idx as u8); // astore_n
-                        },
-                        _ => {},
-                    }
-
-                    self.vars.insert(ident, (t, store_idx));
-                },
+                Rule::varDecl => self.compile_var_decl(pair),
                 _ => {
                     println!("{pair:?}");
                 },
@@ -158,6 +97,41 @@ impl<'a> MethodCompiler<'a> {
                 self.b.put_u16(self.cp.insert_ref(crate::compiler::constant_pool::Ref::Method, class.this_class.clone(), f.to_string(), method.descriptor.to_string()));
             },
         }
+    }
+
+    fn compile_var_decl(&mut self, pair: Pair<'a, Rule>) {
+        let mut pairs = pair.into_inner();
+        let ident = pairs.next().unwrap().as_str();
+        let t = {
+            let pair = pairs.peek().unwrap();
+            match pair.as_rule() {
+                Rule::primitive | Rule::object => {
+                    let t_id = pairs.next().unwrap().as_str().parse().unwrap();
+                    let is_array = match pairs.peek().unwrap().as_rule() {
+                        Rule::array => {
+                            pairs.next();
+                            true
+                        },
+                        _ => false,
+                    };
+
+                    Some(Type::new(t_id, is_array))
+                }
+                _ => None,
+            }
+        };
+        let v = pairs.next().unwrap();
+        let t = t.unwrap_or(self.compile_value(v).unwrap());
+
+        let store_idx = (self.args.len() + self.vars.len()) as u8;
+
+        match t.id {
+            TypeId::I8 | TypeId::I16 | TypeId::I32 | TypeId::Char | TypeId::Bool => self.b.put_u8(59 + store_idx as u8), // istore_n
+            TypeId::Other(_) => self.b.put_u8(75 + store_idx as u8), // astore_n
+            t => { unimplemented!("{t:?}") },
+        };
+
+        self.vars.insert(ident, (t, store_idx));
     }
 
     pub fn compile_args(&mut self, pairs: Pairs<'a, Rule>) -> Descriptor {
