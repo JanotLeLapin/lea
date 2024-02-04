@@ -170,6 +170,10 @@ impl<'a> MethodCompiler<'a> {
                 let ident = pairs.next().unwrap();
                 let method = class.methods.get(ident.as_str()).unwrap();
 
+                for arg in pairs {
+                    self.compile_value(arg, &class).unwrap();
+                }
+
                 self.b.put_u8(184); // invokestatic
                 self.b.put_u16(self.cp.insert_ref(super::constant_pool::Ref::Method, class.this_class.clone(), ident.as_str().to_string(), method.descriptor.to_string()));
 
